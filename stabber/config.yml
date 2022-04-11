@@ -1,0 +1,39 @@
+DATA:
+
+    DIR: "dataset/training/"
+    VAL_DIR: "dataset/training/"
+    TEST_DIR: "dataset/training/"
+    LABEL_FILE: "dataset/training/train.txt"
+    VAL_LABEL_FILE: "dataset/training/val_tn_nl.txt"
+    TEST_LABEL_FILE: "dataset/training/val_tn.txt"
+    FORWARD_DIR: "dataset/training/forward_data"
+    BATCH_SIZE: 16
+    WORKERS: 4
+
+OPTIMIZER:
+    LR: 1e-4
+    MOMENTUM: 0.9
+    GAMMA: 0.1
+    WEIGHT_DECAY: 0.0
+    STEPS: [200]
+    LAMBDA: 0.5
+
+MODEL:
+    RESIZE: 300
+    INFLATION: 2
+    FIX: True
+    THRESHOLD: 0.5
+    EDGE_ALIGN: False
+
+TRAIN:
+    EPOCHS: 200
+    PRINT_FREQ: 100
+    TEST: False
+    SEED: 1996
+    GPU_ID: 0
+    DATA_PARALLEL: False
+    RESUME:
+
+MISC:
+    TMP: "./result/reproduce10.0"
+    TMPT: "./result/reproduce10.0/runs"

@@ -1,0 +1,13 @@
+2022-03-28 15:01:31,785 INFO {'DATA': {'DIR': 'dataset/training/', 'VAL_DIR': 'dataset/training/', 'TEST_DIR': 'dataset/training/', 'LABEL_FILE': 'dataset/training/train.txt', 'VAL_LABEL_FILE': 'dataset/training/test.txt', 'TEST_LABEL_FILE': 'dataset/training/test.txt', 'FORWARD_DIR': 'dataset/training/forward_data', 'BATCH_SIZE': 10, 'WORKERS': 4}, 'OPTIMIZER': {'LR': '1e-4', 'MOMENTUM': 0.9, 'GAMMA': 0.1, 'WEIGHT_DECAY': 0.0, 'STEPS': []}, 'MODEL': {'RESIZE': 300, 'INFLATION': 2, 'FIX': True, 'THRESHOLD': 0.5, 'EDGE_ALIGN': False}, 'TRAIN': {'EPOCHS': 200, 'PRINT_FREQ': 100, 'TEST': False, 'SEED': 1996, 'GPU_ID': 0, 'DATA_PARALLEL': False, 'RESUME': None}, 'MISC': {'TMP': './result/reproduce2.2', 'TMPT': './result/reproduce2.2/runs'}}
+2022-03-28 15:02:53,703 INFO Validation result: ==== Accuracy: 0.44828
+2022-03-28 15:02:53,703 INFO Validation result: ==== F1 score: 0.34694
+2022-03-28 15:02:53,703 INFO Validation result: ==== Precision: 0.91892
+2022-03-28 15:02:53,703 INFO Validation result: ==== Recall: 0.21384
+2022-03-28 15:02:53,703 INFO Validation result: ==== TP: 34.00000
+2022-03-28 15:02:53,704 INFO Validation result: ==== FP: 3.00000
+2022-03-28 15:02:53,704 INFO Validation result: ==== FN: 125.00000
+2022-03-28 15:02:53,704 INFO Validation result: ==== TN: 70.00000
+2022-03-28 15:02:53,704 INFO Validation result: ==== True Positive Rate(TP/TP+FN): 0.21384
+2022-03-28 15:02:53,704 INFO Validation result: ==== True Negative Rate(TN/TN+FP): 0.95890
+2022-03-28 15:02:53,704 INFO Validation result: ==== Time): 0.00041
+2022-03-28 15:02:53,704 INFO Validation result: ==== FPS): 2462.03922

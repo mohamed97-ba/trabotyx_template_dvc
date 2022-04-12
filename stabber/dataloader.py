@@ -26,7 +26,7 @@ def get_loader(root_dir, resize, batch_size,
             transforms.GaussianBlur([random.randrange(1, 8, 2)]),
         ])
     dataset = dset.ImageFolder(root=root_dir, transform=transform, )
-    print(dataset.imgs)
+    
    
     if shuffle is True:
         data_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=num_thread,

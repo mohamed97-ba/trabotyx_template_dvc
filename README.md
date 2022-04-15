@@ -103,10 +103,6 @@ The command will generate 2 files: .gitignore and .dvc
 * .gitignore — This file excludes a file/folder from a Git repository.
 * data.dvc — This file is metadata storing information about the added file/folder and associates with a specific version of data.
 
-```bash
-dvc add ../data --file data.dvc
-``` 
-
 To version control our data, this file needs to be added into a Git repository using the following commands:
 
 ```bash

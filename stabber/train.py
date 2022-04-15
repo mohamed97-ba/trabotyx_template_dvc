@@ -96,20 +96,20 @@ def main():
 
 
     # dataloader
-    train_loader = get_loader(CONFIGS["DATA"]["DIR"], CONFIGS["DATA"]["LABEL_FILE"], CONFIGS['MODEL']["RESIZE"],
-                              CONFIGS['MODEL']["INFLATION"], batch_size=CONFIGS["DATA"]["BATCH_SIZE"],
-                              num_thread=CONFIGS["DATA"]["WORKERS"],
-                              split='train')
-    val_loader = get_loader(CONFIGS["DATA"]["VAL_DIR"], CONFIGS["DATA"]["VAL_LABEL_FILE"],CONFIGS['MODEL']["RESIZE"],
-                              CONFIGS['MODEL']["INFLATION"], batch_size=CONFIGS["DATA"]["BATCH_SIZE"],
-                            num_thread=CONFIGS["DATA"]["WORKERS"], split='val')
-
+    train_loader = get_loader(CONFIGS["DATA"]["DIR"], CONFIGS['MODEL']["RESIZE"],
+                               batch_size=CONFIGS["DATA"]["BATCH_SIZE"],
+                              num_thread=CONFIGS["DATA"]["WORKERS"], shuffle=True,
+                              )
+    val_loader = get_loader(CONFIGS["DATA"]["VAL_DIR"],CONFIGS['MODEL']["RESIZE"],
+                            batch_size=CONFIGS["DATA"]["BATCH_SIZE"],
+                            num_thread=CONFIGS["DATA"]["WORKERS"], shuffle=True)
     logger.info("Data loading done.")
 
     # Tensorboard summary
 
     writer = SummaryWriter(log_dir=os.path.join(CONFIGS["MISC"]["TMPT"]))
-
+    stopping_counter = 0
+    stopping_patience = 7
     start_epoch = 0
     best_acc = best_acc1
     start_time = time.time()
@@ -127,22 +127,27 @@ def main():
         # print('Epoch-{0} lr: {1}'.format(epoch, optimizer.param_groups[0]['lr']))
         train_acc = train(train_loader, model, optimizer, epoch + 1, writer, args)
         acc = validate(val_loader, model, epoch + 1, writer, train_acc, args)
-        train_loader.dataset.data = train_loader.dataset.resample(epoch=epoch, rand=True)
+        #train_loader.dataset.data = train_loader.dataset.resample(epoch=epoch, rand=True)
         # print(train_loader.dataset.data[0])
         # return
         scheduler.step()
-
+        
         if best_acc < acc:
             is_best = True
             best_acc = acc
             print('saved_acc:',epoch + 1)
+            stopping_counter = 0
+
         else:
             is_best = False
-
+            stopping_counter += 1
+        #if stopping_counter > stopping_patience:
+         #   break
         save_checkpoint({
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),
             'optimizer': optimizer.state_dict(),
+            'acc' : acc,
         }, is_best, path=CONFIGS["MISC"]["TMP"])
 
         t = time.time() - start_time
@@ -177,7 +182,6 @@ def train(train_loader, model, optimizer, epoch, writer, args):
     model.train()
     bar = tqdm.tqdm(train_loader)
     iter_num = len(train_loader.dataset) // CONFIGS["DATA"]["BATCH_SIZE"]
-
     total_loss = 0
     for i, data in enumerate(bar):
 
@@ -191,12 +195,11 @@ def train(train_loader, model, optimizer, epoch, writer, args):
             label = Variable(label).cuda(device=CONFIGS["TRAIN"]["GPU_ID"])
 
         pred = model(images)
-
         output = torch.sigmoid(pred).detach().cpu().numpy().squeeze(1)
-
+        
         l2 = torch.cat([x.view(-1) for x in model.net.parameters()])
-
-        loss = loss_fn(pred.squeeze(1), label)
+        print(label)
+        loss = loss_fn(pred.squeeze(1), label.float())
 
         y_pred.extend(np.round(output))
         y_true.extend(label.detach().cpu().numpy())
@@ -259,7 +262,7 @@ def validate(val_loader, model, epoch, writer,train_acc, args):
 
             output = torch.sigmoid(pred).detach().cpu().numpy().squeeze(1)
             l2 = torch.cat([x.view(-1) for x in model.net.parameters()])
-            loss = loss_fn(pred.squeeze(1), label)
+            loss = loss_fn(pred.squeeze(1), label.float())
 
 
 
@@ -308,10 +311,10 @@ def get_lr(optimizer):
         return param_group['lr']
 
 
-def save_checkpoint(state, is_best, path, filename='checkpoint.pth.tar'):
-    torch.save(state, os.path.join(path, filename))
+def save_checkpoint(state, is_best, path, filename='checkpoint_{epoch:02d}_{val_acc:.5f}.pth'):
+    torch.save(state, os.path.join(path, filename.format(epoch=state['epoch'], val_acc=state['acc'])))
     if is_best:
-        shutil.copyfile(os.path.join(path, filename), os.path.join(path, 'model_best.pth'))
+        shutil.copyfile(os.path.join(path, filename.format(epoch=state['epoch'], val_acc=state['acc'])), os.path.join(path, 'model_best.pth'))
 
 
 class DayHourMinute(object):

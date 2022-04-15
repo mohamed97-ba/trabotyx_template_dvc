@@ -1,10 +1,11 @@
 import argparse
+from distutils import extension
 import os
 import random
 import shutil
 import time
 from os.path import isfile, join, split
-import math
+import matplotlib.pyplot as plt
 import torch
 from torch.autograd import Variable
 import torchvision
@@ -15,7 +16,7 @@ import torch.optim
 import tqdm
 import yaml
 import cv2
-
+from torchvision import transforms
 from torch.optim import lr_scheduler
 # from logger import Logger
 
@@ -27,7 +28,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 parser = argparse.ArgumentParser(description='Stabber Testing')
 # arguments from command line
 parser.add_argument('--config', default="./config.yml", help="path to config file")
-parser.add_argument('--resume', default='result/resnet50_best/model_best.pth', help='path to config file')
+parser.add_argument('--resume', default='result/output_v1/model_v5.pt', help='path to config file')
 parser.add_argument('--tmp', default="", help='tmp')
 args = parser.parse_args()
 
@@ -51,16 +52,18 @@ def main():
         model = model.cuda(device=CONFIGS["TRAIN"]["GPU_ID"])
 
     checkpoint = torch.load(args.resume)
-    model.load_state_dict(checkpoint["state_dict"])
-    print('Epoch:', checkpoint['epoch'])
+    
+    #model.load_state_dict(checkpoint["state_dict"])
+    model.load_state_dict(checkpoint)
+
+    #print('Epoch:', checkpoint['epoch'])
     # print('Threshold:', checkpoint['threshold'])
-    torch.save(model.state_dict(), 'result/resnet50_best/model_v1.pt')
-    exit()
+    #torch.save(model.state_dict(), 'result/output/model_v5.1.pt')
+    #exit()
 
-    val_loader = get_loader(CONFIGS["DATA"]["TEST_DIR"], CONFIGS["DATA"]["TEST_LABEL_FILE"], CONFIGS['MODEL']["RESIZE"],
-                            CONFIGS['MODEL']["INFLATION"], batch_size=1, num_thread=CONFIGS["DATA"]["WORKERS"],
-                            test=True, split='val', shuffle=False)
-
+    val_loader = get_loader(CONFIGS["DATA"]["TEST_DIR"],CONFIGS['MODEL']["RESIZE"],
+                            batch_size=1,
+                            num_thread=CONFIGS["DATA"]["WORKERS"], shuffle=False)
 
     validate(val_loader, model)
 
@@ -77,18 +80,17 @@ def validate(val_loader, model):
     with torch.no_grad():
         bar = tqdm.tqdm(val_loader)
         iter_num = len(val_loader.dataset) // 1
-
+        id = 0
+       
         for i, data in enumerate(bar):
-
-            images, image_ori, label, coords, name, new_coords = data
-            # images, label = data
-            if CONFIGS["TRAIN"]["DATA_PARALLEL"]:
-                images = Variable(images.type(torch.float32)).cuda()
-                label = Variable(label).cuda()
-
-            else:
-                images = Variable(images.type(torch.float32)).cuda(device=CONFIGS["TRAIN"]["GPU_ID"])
-                label = Variable(label).cuda(device=CONFIGS["TRAIN"]["GPU_ID"])
+            id += 1
+            #images, image_ori, label, coords, name, new_coords = data
+            images, label = data
+            
+            print(images.shape)
+            
+            images = Variable(images.type(torch.float32)).cuda(device=CONFIGS["TRAIN"]["GPU_ID"])
+            label = Variable(label).cuda(device=CONFIGS["TRAIN"]["GPU_ID"])
 
             torch.cuda.synchronize()
             torch.cuda.synchronize()
@@ -97,7 +99,13 @@ def validate(val_loader, model):
             start_all = time.perf_counter()
             # start = time.time()
             pred = model(images)
+            invTrans = transforms.Compose([ transforms.Normalize(mean = [ 0., 0., 0. ],
+                                                     std = [ 1/0.229, 1/0.224, 1/0.225 ]),
+                                transforms.Normalize(mean = [ -0.485, -0.456, -0.406 ],
+                                                     std = [ 1., 1., 1. ]),
+                               ])
 
+            images = invTrans(images)
             output = torch.sigmoid(pred).detach().cpu().numpy().squeeze(1)
             # output = out.detach().cpu().numpy()
 
@@ -109,8 +117,35 @@ def validate(val_loader, model):
             # exit()
             y_pred.extend(np.round(output))
             y_true.extend(label.detach().cpu().numpy())
-
-            if visualise == True:
+            images = torch.squeeze(images)
+           
+            image = images.detach().cpu().numpy()
+            img  = (image*255).astype(np.uint8)
+           
+            img = np.transpose(img, (2, 1, 0))
+            if y_pred[-1] == 1 and y_true[-1] == 1:
+                #img = cv2.imread('{}'.format(val_loader.dataset.imgs[i+1][0]), cv2.IMREAD_UNCHANGED)
+                #image_name , extension= os.path.splitext('{}'.format(val_loader.dataset.imgs[i-1][0].split('/')[-1]))
+                os.chdir('/home/med-ba/trabotyx_template_dvc/stabber/visualise_stab_bboxtn/TP/')
+                cv2.imwrite('image_{}.jpg'.format(id), img)
+            elif y_pred[-1] == 1 and y_true[-1] == 0:
+               # img = cv2.imread('{}'.format(val_loader.dataset.imgs[i+1][0]), cv2.IMREAD_UNCHANGED)
+               # image_name , extension= os.path.splitext('{}'.format(val_loader.dataset.imgs[i-1][0].split('/')[-1]))
+                os.chdir('/home/med-ba/trabotyx_template_dvc/stabber/visualise_stab_bboxtn/FP/')
+                cv2.imwrite('image_{}.jpg'.format(id), img)
+            elif y_pred[-1] == 0 and y_true[-1] == 0:
+                os.chdir('/home/med-ba/trabotyx_template_dvc/stabber/visualise_stab_bboxtn/TN/')
+                cv2.imwrite('image_{}.jpg'.format(id), img)
+            else:
+                os.chdir('/home/med-ba/trabotyx_template_dvc/stabber/visualise_stab_bboxtn/FN/')
+                cv2.imwrite('image_{}.jpg'.format(id), img)
+            # print(images[0])
+            # images = images[0].numpy()
+            # images = images.astype(np.uint8)
+            # if y_true[-1] == 1:
+            
+            #   cv2.imwrite('/home/med-ba/trabotyx_template_dvc/stabber/visualise_stab_bboxtn', images)
+            if visualise == False:
 
                 if not os.path.exists(os.path.join("visualise_stab_bboxtn")):
                     os.makedirs(os.path.join("visualise_stab_bboxtn"))

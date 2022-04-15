@@ -1,0 +1,5 @@
+wdir: ../model
+outs:
+- md5: b4366f3abedd3acfba5810c26f2ab5e6
+  size: 94356801
+  path: model_v4.1.pt

@@ -131,7 +131,7 @@ git tag -a "v0.0" -m "dataset Version 0.0"
 git push origin v0.0
 ``` 
 ## Pipeline stages
-``` 
+
 ```bash
 dvc run -n train  \
 -p  train.epochs,data.batch_size \
@@ -142,6 +142,7 @@ python /home/med-ba/trabotyx_template_dvc/stabber/train.py  --param /home/med-ba
 ``` 
 A dvc.yaml file is generated. It includes information about the command we want to run (python /home/med-ba/trabotyx_template_dvc/stabber/train.py  --param /home/med-ba/trabotyx_template_dvc/params.yaml ), its dependencies, and outputs.
 - dvc.yaml
+```bash
 stages:
   train:
     cmd: python /home/med-ba/trabotyx_template_dvc/stabber/train.py --config /home/med-ba/trabotyx_template_dvc/stabber/config.yml
@@ -153,8 +154,10 @@ stages:
     metrics:
     - stabber/result/output/log.json:
         cache: false
+``` 
 
 ** we can add manually different stage:
+```bash
 stages:
   train:
     cmd: python /home/med-ba/trabotyx_template_dvc/stabber/train.py --param /home/med-ba/trabotyx_template_dvc/params.yaml
@@ -174,7 +177,7 @@ stages:
     - stabber/predict.py
     outs:
     - stabber/result/visualise_stab_bboxtn
-    
+```
 and run : 
 ```bash
 dvc repro

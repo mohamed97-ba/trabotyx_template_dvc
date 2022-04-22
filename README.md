@@ -128,7 +128,67 @@ git push --set-upstream origin first_experiment
 git tag -a "v0.0" -m "dataset Version 0.0"
 ``` 
 ```bash
-git tag origin v0.0
+git push origin v0.0
 ``` 
+## Pipeline stages
+``` 
+```bash
+dvc run -n train  \
+-p  train.epochs,data.batch_size \
+-d /home/med-ba/trabotyx_template_dvc/stabber/train.py  \
+-o /home/med-ba/trabotyx_template_dvc/stabber/result/output/model_best.pth \
+-M metric.json 
+python /home/med-ba/trabotyx_template_dvc/stabber/train.py  --param /home/med-ba/trabotyx_template_dvc/params.yaml 
+``` 
+A dvc.yaml file is generated. It includes information about the command we want to run (python /home/med-ba/trabotyx_template_dvc/stabber/train.py  --param /home/med-ba/trabotyx_template_dvc/params.yaml ), its dependencies, and outputs.
+- dvc.yaml
+stages:
+  train:
+    cmd: python /home/med-ba/trabotyx_template_dvc/stabber/train.py --config /home/med-ba/trabotyx_template_dvc/stabber/config.yml
+    deps:
+    - stabber/config.yml
+    - stabber/train.py
+    outs:
+    - stabber/result/output/model_best.pth
+    metrics:
+    - stabber/result/output/log.json:
+        cache: false
+
+** we can add manually different stage:
+stages:
+  train:
+    cmd: python /home/med-ba/trabotyx_template_dvc/stabber/train.py --param /home/med-ba/trabotyx_template_dvc/params.yaml
+    deps:
+    - stabber/train.py
+    params:
+    - data.batch_size
+    - train.epochs
+    outs:
+    - stabber/result/output/model_best.pth
+    metrics:
+    - metric.json:
+        cache: false
+  predict:
+    cmd: python /home/med-ba/trabotyx_template_dvc/stabber/predict.py --config /home/med-ba/trabotyx_template_dvc/stabber/config.yml
+    deps:
+    - stabber/predict.py
+    outs:
+    - stabber/result/visualise_stab_bboxtn
+    
+and run : 
+```bash
+dvc repro
+``` 
+to reproduce the pipeline
+
+## Data registy
+Adding datasets to a registry can be as simple as placing the data file or directory in question inside the workspace, and track it with dvc add.
+## Data downloads
+```bash
+dvc get https://github.com/trabotyx/trabotyx_dvc_stab_nostab.git data
+``` 
+This downloads /data from the project trabotyx_dvc_stab_nostab and places it in the current working directory.
+
+
 
 

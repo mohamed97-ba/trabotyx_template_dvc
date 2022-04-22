@@ -185,6 +185,7 @@ dvc repro
 to reproduce the pipeline
 
 ## Data registy
+migrate to dvc 2.0.5
 Adding datasets to a registry can be as simple as placing the data file or directory in question inside the workspace, and track it with dvc add.
 ## Data downloads
 ```bash
